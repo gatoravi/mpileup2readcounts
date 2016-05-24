@@ -43,57 +43,84 @@ inline int str_to_num(string num) {
 }
 
 //DS to hold the pertinent information
-struct mpileup_line {
-    string chr;
-    int pos;
-    string ref_base;
-    int depth;
-    string bases;
-    string qual;
-    //Counts for different bases
-    int refcount, altcount;
-    int acount, ccount, gcount, tcount, ncount;
-    mpileup_line() {
-        chr = ref_base = bases = qual = "NA";
-        depth = pos = 0;
-        refcount = altcount = 0;
-        acount = ccount = gcount = tcount = ncount = 0;
-    }
-    //Set the appropriate count for ref nucleotide
-    void set_ref_nuc_count() {
-        switch(ref_base[0]) {
-            case 'A':
-                acount = refcount;
-                break;
-            case 'C':
-                ccount = refcount;
-                break;
-            case 'G':
-                gcount = refcount;
-                break;
-            case 'T':
-                tcount = refcount;
-                break;
-            case 'N':
-                ncount = refcount;
-                break;
-            default:
-                throw runtime_error("Unknown ref base: " +
-                                    ref_base);
+class mpileup_line {
+    public:
+        string chr;
+        int pos;
+        string ref_base;
+        int depth;
+        string bases;
+        string qual;
+        //Counts for different bases
+        int refcount, altcount;
+        int acount, ccount, gcount, tcount, ncount, indelcount;
+        mpileup_line() {
+            chr = ref_base = bases = qual = "NA";
+            depth = pos = 0;
+            refcount = altcount = 0;
+            acount = ccount = gcount = tcount = ncount = 0;
+            indelcount = 0;
         }
-    }
-    void print(ostream& out = cout) {
-       out << chr << "\t"
-           << pos << "\t"
-           << depth << "\t"
-           << refcount << "\t"
-           << acount << "\t"
-           << ccount << "\t"
-           << gcount << "\t"
-           << tcount << "\t"
-           << ncount << "\t"
-           << endl;
-    }
+        //Set the appropriate count for total alt
+        //Needs to be called before set_ref_nuc_count()
+        void set_alt_count() {
+            //This works since ref bases are . and ,
+            altcount = acount + ccount + gcount + tcount +
+                        ncount;
+        }
+        //Set the appropriate count for ref nucleotide
+        void set_ref_nuc_count() {
+            switch(ref_base[0]) {
+                case 'A':
+                    acount = refcount;
+                    break;
+                case 'C':
+                    ccount = refcount;
+                    break;
+                case 'G':
+                    gcount = refcount;
+                    break;
+                case 'T':
+                    tcount = refcount;
+                    break;
+                case 'N':
+                    ncount = refcount;
+                    break;
+                default:
+                    throw runtime_error("Unknown ref base: " +
+                                        ref_base);
+            }
+        }
+        static void print_header(ostream& out = cout) {
+            out << "chr" << "\t"
+                << "pos" << "\t"
+                << "depth" << "\t"
+                << "ref_base" << "\t"
+                << "refcount" << "\t"
+                << "altcount" << "\t"
+                << "acount" << "\t"
+                << "ccount" << "\t"
+                << "gcount" << "\t"
+                << "tcount" << "\t"
+                << "ncount" << "\t"
+                << "indelcount"
+                << endl;
+        }
+        void print(ostream& out = cout) {
+            out << chr << "\t"
+                << pos << "\t"
+                << depth << "\t"
+                << ref_base << "\t"
+                << refcount << "\t"
+                << altcount << "\t"
+                << acount << "\t"
+                << ccount << "\t"
+                << gcount << "\t"
+                << tcount << "\t"
+                << ncount << "\t"
+                << indelcount
+                << endl;
+        }
 };
 
 
@@ -101,13 +128,64 @@ struct mpileup_line {
 void parse_bases_to_readcounts(mpileup_line& ml1) {
     for(int i = 0; i < ml1.bases.length(); i++) {
         char base = ml1.bases[i];
+        string indelsize_string;
+        int indelsize_int = 0;
         switch(base) {
+            //Match to reference
             case '.':
             case ',':
                 ml1.refcount += 1;
                 break;
+            case 'a':
+            case 'A':
+                ml1.acount += 1;
+                break;
+            case 'c':
+            case 'C':
+                ml1.ccount += 1;
+                break;
+            case 'g':
+            case 'G':
+                ml1.gcount += 1;
+                break;
+            case 't':
+            case 'T':
+                ml1.tcount += 1;
+                break;
+            case 'n':
+            case 'N':
+                ml1.ncount += 1;
+                break;
+            //Reference skips
+            case '<':
+            case '>':
+                break;
+            //Insertion or deletion
+            case '-':
+            case '+':
+                ml1.indelcount += 1;
+                i++;
+                while(ml1.bases[i] >= 48 &&
+                      ml1.bases[i] <= 57) {
+                    indelsize_string = indelsize_string + ml1.bases[i];
+                    i = i+1;
+                }
+                indelsize_int = str_to_num(indelsize_string);
+                i += indelsize_int - 1;
+                break;
+            //End of read segment
+            case '$':
+                break;
+            //Beginning of read segment
+            case '^':
+                i = i + 1;//Skip quality
+                break;
+            default:
+                throw runtime_error("Unknown ref base: " +
+                                    base);
         }
     }
+    ml1.set_alt_count();
     ml1.set_ref_nuc_count();
 }
 
@@ -130,16 +208,16 @@ void process_mpileup_line(std::string line) {
 
 int main(int argc, char* argv[]) {
     string line;
+    mpileup_line::print_header();
     getline(cin, line);
     while(cin) {
         try {
             process_mpileup_line(line);
         } catch(const std::runtime_error& e) {
-            cerr << e.what();
+            cerr << e.what() << endl;
             cerr << "\nError parsing line " << line;
             break;
         }
         getline(cin, line);
     }
-    cerr << endl << "Done!";
 }
