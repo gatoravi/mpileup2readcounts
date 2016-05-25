@@ -86,9 +86,9 @@ class mpileup_line {
                 case 'N':
                     ncount = refcount;
                     break;
+                //Deal with -,R,Y,K,M,S,W etc
                 default:
-                    throw runtime_error("Unknown ref base: " +
-                                        ref_base);
+                    break;
             }
         }
         static void print_header(ostream& out = cout) {
