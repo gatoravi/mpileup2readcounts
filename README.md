@@ -1,6 +1,7 @@
 ##Synopsis
 Get the readcounts at a locus by piping samtools mpileup output.
 This allows us to be flexible with the version of samtools used.
+This program has been tested on samtools v1.1
 
 ##Install
 ```

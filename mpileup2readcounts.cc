@@ -160,6 +160,10 @@ void parse_bases_to_readcounts(mpileup_line& ml1) {
             case '<':
             case '>':
                 break;
+            //This base is deleted
+            case '*':
+                ml1.indelcount += 1;
+                break;
             //Insertion or deletion
             case '-':
             case '+':
