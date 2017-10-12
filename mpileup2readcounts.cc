@@ -46,6 +46,7 @@ inline int str_to_num(string num) {
 class mpileup_line {
     public:
         string chr;
+        string identifier; //sample identifier
         int pos;
         string ref_base;
         int depth;
@@ -103,7 +104,8 @@ class mpileup_line {
                 << "gcount" << "\t"
                 << "tcount" << "\t"
                 << "ncount" << "\t"
-                << "indelcount"
+                << "indelcount" << "\t"
+                << "identifier"
                 << endl;
         }
         void print(ostream& out = cout) {
@@ -118,7 +120,8 @@ class mpileup_line {
                 << gcount << "\t"
                 << tcount << "\t"
                 << ncount << "\t"
-                << indelcount
+                << indelcount << "\t"
+                << identifier
                 << endl;
         }
 };
@@ -194,9 +197,10 @@ void parse_bases_to_readcounts(mpileup_line& ml1) {
 }
 
 //Split the line into the required fields and parse
-void process_mpileup_line(std::string line) {
+void process_mpileup_line(std::string line, std::string id1) {
     stringstream ss(line);
     mpileup_line ml1;
+    ml1.identifier = id1;
     string pos, depth;
     getline(ss, ml1.chr, '\t');
     getline(ss, pos, '\t');
@@ -214,9 +218,13 @@ int main(int argc, char* argv[]) {
     string line;
     mpileup_line::print_header();
     getline(cin, line);
+    string identifier = "NA";
+    if(argc > 1) {
+        identifier = argv[1];
+    }
     while(cin) {
         try {
-            process_mpileup_line(line);
+            process_mpileup_line(line, identifier);
         } catch(const std::runtime_error& e) {
             cerr << e.what() << endl;
             cerr << "\nError parsing line " << line;
