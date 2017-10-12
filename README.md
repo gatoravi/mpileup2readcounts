@@ -1,13 +1,13 @@
 [![Build Status](https://travis-ci.org/gatoravi/mpileup2readcounts.svg?branch=master)](https://travis-ci.org/gatoravi/mpileup2readcounts)
 
 
-##Synopsis
+## Synopsis
 
 Get the readcounts at a locus by piping samtools mpileup output.
 This allows us to be flexible with the version of samtools used.
 This program has been tested on samtools v1.1
 
-##Install
+## Install
 ```
 mkdir build
 cd build
@@ -15,7 +15,7 @@ cmake ..
 make
 ```
 
-##Usage
+## Usage
 ```
 samtools mpileup -f ref.fa -l regions.bed alignments.bam | mpileup2readcounts
 ```
